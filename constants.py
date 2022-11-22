@@ -1,0 +1,5 @@
+EARTH_EQUITORIAL_RADIUS: int = 6_378_137 # meters
+EARTH_J2: float = 1.08262668e-3 # unitless
+EARTH_MASS: float = 5.97219e24 # kg
+GRAVITATIONAL_CONSTANT: float = 6.6743e-11 # m^3 kg^-1 s^-2
+EARTH_MEAN_RADIUS: int = 6_371_000
