@@ -49,7 +49,7 @@ plt.clabel(clines, inline=True, manual=[])
 
 trans = plt.gca().transData
 cpoint = trans.transform(
-    (alt_ticks[round(len(alt_ticks) * 0.1)],
+    (alt_ticks[round(len(alt_ticks) * 0.15)],
     inc_ticks[round(len(inc_ticks) * 0.5)]))
 
 for index in range(len(clines.collections)):
