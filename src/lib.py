@@ -33,3 +33,15 @@ def nodal_precession(
     """
     return ((-3 * equitorial_radius**2 * j2 * angular_velocity(period(semimajor_axis, combined_mass)) * math.cos(math.radians(inclination)))
      / (2 * (semimajor_axis * (1 - eccentricity**2))**2))
+
+def semimajor_axis(*, mean_motion: float, combined_mass: int = constants.EARTH_MASS) -> float:
+    if mean_motion is not None:
+        return (constants.GRAVITATIONAL_CONSTANT * combined_mass / (2 * math.pi * mean_motion) ** 2) ** (1 / 3)
+    else:
+        raise ValueError('mean_motion must be specified')
+
+def apoapsis(semimajor_axis: float, eccentricity: float = 0) -> float:
+    return semimajor_axis * (1 + eccentricity)
+
+def periapsis(semimajor_axis: float, eccentricity: float = 0) -> float:
+    return semimajor_axis * (1 - eccentricity)
