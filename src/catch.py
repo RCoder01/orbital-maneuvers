@@ -21,10 +21,10 @@ def resources(object_1: dict, object_2: dict) -> tuple[float, float]:
     EXTRA_FUEL = 0 # m/s
     orbit_j: lib.Orbit2d
     if orbit_1.period < orbit_2.period:
-        orbit_j = orbit_1.apoapsis_burn(-EXTRA_FUEL)
+        orbit_j = orbit_1.apoapsis_burn(-EXTRA_FUEL / 2)
     else:
-        orbit_j = orbit_2.periapsis_burn(EXTRA_FUEL)
-    j_change_dv_total = 2 * EXTRA_FUEL
+        orbit_j = orbit_2.periapsis_burn(EXTRA_FUEL / 2)
+    j_change_dv_total = EXTRA_FUEL
 
 
     inc_1 = float(object_1['INCLINATION'])
