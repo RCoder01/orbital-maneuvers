@@ -27,7 +27,7 @@ class Orbit2d:
             gravitational_parameter=gravitational_parameter)
 
     @classmethod
-    def from_apsis(cls, /, periapsis: float, apoapsis: float, **kwargs) -> Self:
+    def from_apsides(cls, /, periapsis: float, apoapsis: float, **kwargs) -> Self:
         periapsis, apoapsis = sorted([periapsis, apoapsis])
         return cls(semimajor_axis=(periapsis + apoapsis) / 2, eccentricity=(apoapsis - periapsis) / (apoapsis + periapsis), **kwargs)
 
@@ -36,19 +36,19 @@ class Orbit2d:
         # semimajor_axis = gravitational_parameter / (apoapsis_velocity * periapsis_velocity)
         periapsis = 2 * gravitational_parameter / ((apoapsis_velocity * periapsis_velocity) * (1 + (periapsis_velocity / apoapsis_velocity)))
         apoapsis = periapsis * periapsis_velocity / apoapsis_velocity
-        return cls.from_apsis(periapsis, apoapsis, gravitational_parameter=gravitational_parameter)
+        return cls.from_apsides(periapsis, apoapsis, gravitational_parameter=gravitational_parameter)
 
     @classmethod
     def from_periapsis(cls, periapsis_distance: float, periapsis_velocity: float, gravitational_parameter: float = gravitational_parameter()) -> Self:
         semimajor_axis = -1 * gravitational_parameter * periapsis_distance / (periapsis_velocity ** 2 * periapsis_distance - 2 * gravitational_parameter)
         apoapsis = 2 * semimajor_axis - periapsis_distance
-        return cls.from_apsis(periapsis_distance, apoapsis, gravitational_parameter=gravitational_parameter)
+        return cls.from_apsides(periapsis_distance, apoapsis, gravitational_parameter=gravitational_parameter)
 
     @classmethod
     def from_apoapsis(cls, apoapsis_distance: float, apoapsis_velocity: float, gravitational_parameter: float = gravitational_parameter()) -> Self:
         semimajor_axis = -1 * gravitational_parameter * apoapsis_distance / (apoapsis_velocity ** 2 * apoapsis_distance - 2 * gravitational_parameter)
         periapsis = 2 * semimajor_axis - apoapsis_distance
-        return cls.from_apsis(periapsis, apoapsis_distance, gravitational_parameter=gravitational_parameter)
+        return cls.from_apsides(periapsis, apoapsis_distance, gravitational_parameter=gravitational_parameter)
 
     def periapsis_burn(self, delta_v: float) -> Self:
         return self.from_periapsis(self.periapsis, self.periapsis_velocity + delta_v)
@@ -148,8 +148,8 @@ def tangential_orbit_change_dv(initial: Orbit2d, final: Orbit2d) -> float:
     if abs(initial.apoapsis - final.apoapsis) <= 1e-6:
         return abs(initial.apoapsis_velocity - final.apoapsis_velocity)
 
-    intermediate_a = Orbit2d.from_apsis(initial.periapsis, final.apoapsis)
-    intermediate_b = Orbit2d.from_apsis(final.periapsis, initial.apoapsis)
+    intermediate_a = Orbit2d.from_apsides(initial.periapsis, final.apoapsis)
+    intermediate_b = Orbit2d.from_apsides(final.periapsis, initial.apoapsis)
 
     return min(
         tangential_orbit_change_dv(initial, intermediate_a) + tangential_orbit_change_dv(intermediate_a, final),
