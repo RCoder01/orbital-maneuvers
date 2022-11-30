@@ -110,10 +110,12 @@ def get_objects():
 
 if __name__ == '__main__':
     objects = get_objects()
-    s_objects = sorted(list(obj for obj in objects if float(obj['ECCENTRICITY']) < 0.07), key=lambda obj: (float(obj['INCLINATION']), float(obj['RA_OF_ASC_NODE'])))
+    s_objects = sorted(list(obj for obj in objects if float(obj['ECCENTRICITY']) < 0.07 and 0 < float(obj['RA_OF_ASC_NODE']) < 10), key=lambda obj: (float(obj['INCLINATION']), float(obj['RA_OF_ASC_NODE'])))
     cum_dv = 0
     cum_dt = 0
-    for i in range(7850, 7850 + 10):
+
+    START = 400
+    for i in range(START, START + 10):
         # print(i, s_objects[i])
         dv, dt = resources(s_objects[i], s_objects[i+1])
         cum_dv += dv
@@ -121,6 +123,7 @@ if __name__ == '__main__':
         print(f'{i}: {dv:3.0f} m/s, 10^{math.log10(dt):4.2f} s')
         pass
     print(f'cumulative: {cum_dv:3.0f} m/s, {cum_dt:4.2f} s (10^{math.log10(cum_dt):4.2f} s, {cum_dt/60/60/24/365:5.2f} years)')
+
     # r_objects = s_objects[7060:13376]
     # i = 0
     # caught = [s_objects.pop(0)]

@@ -85,14 +85,14 @@ class Orbit2d:
     @property
     def period(self) -> float:
         return ((self.semimajor_axis**3 * 4 * math.pi**2) / self.gravitational_parameter) ** 0.5
-    
+
     @property
     def angular_velocity(self) -> float:
         return 2 * math.pi / self.period
 
     def apoapsis_altitude(self, body_radius: float = constants.EARTH_MEAN_RADIUS) -> float:
         return self.apoapsis - body_radius
-    
+
     def periapsis_altitude(self, body_radius: float = constants.EARTH_MEAN_RADIUS) -> float:
         return self.periapsis - body_radius
 
