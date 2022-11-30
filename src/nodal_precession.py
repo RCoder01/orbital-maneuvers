@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
 
-from .lib import nodal_precession
+from lib import nodal_precession
 import constants
 
 
