@@ -2,7 +2,7 @@ import lib
 import math
 import constants
 
-def resources(object_1: dict, object_2: dict) -> tuple[float, float]:
+def resources(object_1: dict, object_2: dict, time_offset: float = 0, extra_budget: float = 0) -> tuple[float, float]:
     orbit_1 = lib.Orbit2d.from_dict(object_1)
     orbit_2 = lib.Orbit2d.from_dict(object_2)
     # intermediate orbit needed for arg of periapsis change
@@ -17,26 +17,18 @@ def resources(object_1: dict, object_2: dict) -> tuple[float, float]:
         radius_i = orbit_1.apoapsis
     orbit_i = lib.Orbit2d(radius_i)
 
-    
-    EXTRA_FUEL = 0 # m/s
+
     orbit_j: lib.Orbit2d
     if orbit_1.period < orbit_2.period:
-        orbit_j = orbit_1.apoapsis_burn(-EXTRA_FUEL / 2)
+        orbit_j = orbit_1.apoapsis_burn(-extra_budget / 2)
     else:
-        orbit_j = orbit_2.periapsis_burn(EXTRA_FUEL / 2)
-    j_change_dv_total = EXTRA_FUEL
+        orbit_j = orbit_2.periapsis_burn(extra_budget / 2)
+    j_change_dv_total = extra_budget
 
 
     inc_1 = float(object_1['INCLINATION'])
     inc_2 = float(object_2['INCLINATION'])
     inc_delta = abs(inc_1 - inc_2)
-
-
-    RAAN_1 = float(object_1['RA_OF_ASC_NODE'])
-    RAAN_2 = float(object_2['RA_OF_ASC_NODE'])
-    RAAN_delta = RAAN_1 - RAAN_2
-    if RAAN_delta < 0:
-        RAAN_delta += 360
 
     nodal_precession_2 = math.degrees(lib.nodal_precession(inc_2, orbit_2))
 
@@ -47,12 +39,15 @@ def resources(object_1: dict, object_2: dict) -> tuple[float, float]:
     nodal_precession_delta_i = nodal_precession_2 - nodal_precession_i
     nodal_precession_delta_j = nodal_precession_2 - nodal_precession_j
 
-    time_to_precess_1 = ((RAAN_delta - 360) if nodal_precession_delta_1 < 0 else RAAN_delta) / nodal_precession_delta_1
-    time_to_precess_i = ((RAAN_delta - 360) if nodal_precession_delta_i < 0 else RAAN_delta) / nodal_precession_delta_i
-    try:
-        time_to_precess_j = ((RAAN_delta - 360) if nodal_precession_delta_j < 0 else RAAN_delta) / nodal_precession_delta_j
-    except ZeroDivisionError:
-        time_to_precess_j = float('inf')
+    RAAN_1 = (float(object_1['RA_OF_ASC_NODE']) + nodal_precession_1 * time_offset) % 360
+    RAAN_2 = (float(object_2['RA_OF_ASC_NODE']) + nodal_precession_2 * time_offset) % 360
+    RAAN_delta = RAAN_1 - RAAN_2
+    if RAAN_delta < 0:
+        RAAN_delta += 360
+
+    time_to_precess_1 = ((RAAN_delta - 360) if nodal_precession_delta_1 < 0 else RAAN_delta) / nodal_precession_delta_1 if nodal_precession_delta_1 else float('inf')
+    time_to_precess_i = ((RAAN_delta - 360) if nodal_precession_delta_i < 0 else RAAN_delta) / nodal_precession_delta_i if nodal_precession_delta_i else float('inf')
+    time_to_precess_j = ((RAAN_delta - 360) if nodal_precession_delta_j < 0 else RAAN_delta) / nodal_precession_delta_j if nodal_precession_delta_j else float('inf')
 
     period: float
     orbits_to_precess: float
@@ -85,7 +80,7 @@ def resources(object_1: dict, object_2: dict) -> tuple[float, float]:
 
     mean_anomaly_precession = (period - orbit_2.period) / orbit_2.period
     mean_anomaly_precession_delta = mean_anomaly_precession * orbits_to_precess % 360
-    mean_anomaly_delta = 180 # worst case scenario #float(object_2['MEAN_ANOMALY']) - float(object_1['MEAN_ANOMALY'])
+    mean_anomaly_delta = 360 # worst case scenario #float(object_2['MEAN_ANOMALY']) - float(object_1['MEAN_ANOMALY'])
     final_mean_anomaly_delta = (mean_anomaly_delta + mean_anomaly_precession_delta) % 360
     if final_mean_anomaly_delta < 0:
         final_mean_anomaly_delta += 360 # normalize to 0-360
@@ -108,38 +103,40 @@ def get_objects():
         objects = json.load(f)
     return objects
 
+def collect(objects, start, per_catch_budget):
+    v = 0
+    t = 0
+
+    index = start
+    caught = [objects[start]]
+    metadata = []
+    num = 10
+    while v < 5000 and index < len(objects) - 1:
+        # print(i, s_objects[i])
+        index += 1
+        if objects[index] in caught:
+            continue
+        dv, dt = resources(caught[-1], objects[index], t, per_catch_budget)
+        if dt < 10**7.25:
+            v += dv
+            t += dt
+            caught.append(objects[index])
+            metadata.append((v, t, index))
+            # print(f'{index}: {dv:3.0f} m/s, 10^{math.log10(dt):4.2f} s')
+            index = start
+    # print(f'cumulative ({len(caught) - 1}): {v:3.0f} m/s, {t:.0f} s (10^{math.log10(t):4.2f} s, {t/60/60/24/365:5.2f} years)')
+    return caught, v, t, metadata
+
+
 if __name__ == '__main__':
     objects = get_objects()
-    s_objects = sorted(list(obj for obj in objects if float(obj['ECCENTRICITY']) < 0.07 and 0 < float(obj['RA_OF_ASC_NODE']) < 10), key=lambda obj: (float(obj['INCLINATION']), float(obj['RA_OF_ASC_NODE'])))
-    cum_dv = 0
-    cum_dt = 0
+    s_objects = sorted(
+        list(obj for obj in objects if float(obj['ECCENTRICITY']) < 0.007 and 400 < float(obj['APOAPSIS']) < 600),
+        key=lambda obj: (float(obj['INCLINATION']), float(obj['RA_OF_ASC_NODE'])))
 
-    START = 400
-    for i in range(START, START + 10):
-        # print(i, s_objects[i])
-        dv, dt = resources(s_objects[i], s_objects[i+1])
-        cum_dv += dv
-        cum_dt += dt
-        print(f'{i}: {dv:3.0f} m/s, 10^{math.log10(dt):4.2f} s')
-        pass
-    print(f'cumulative: {cum_dv:3.0f} m/s, {cum_dt:4.2f} s (10^{math.log10(cum_dt):4.2f} s, {cum_dt/60/60/24/365:5.2f} years)')
-
-    # r_objects = s_objects[7060:13376]
-    # i = 0
-    # caught = [s_objects.pop(0)]
-    # while len(caught) <= 10 and i < len(r_objects):
-    #     try:
-    #         dv, dt = resources(caught[-1], s_objects[i])
-    #     except ZeroDivisionError:
-    #         i += 1
-    #         continue
-    #     if dv > 500:
-    #         # print(f'failed: {i},  {dv} m/s, {dt} s')
-    #         i += 1
-    #         continue
-    #     caught.append(s_objects.pop(i))
-    #     cum_dv += dv
-    #     cum_dt += dt
-    #     print(f'{i}: {dv} m/s, {dt} s')
-    # print(f'cumulative: {cum_dv} m/s, {cum_dt} s')
-    # 7060 to 13376 (97 to 100 degrees inclination)
+    PER_CATCH_BUDGET = 300 # m/s
+    START = 370
+    caught, v, t, meta = collect(s_objects, START, PER_CATCH_BUDGET)
+    for dv, dt, i in meta:
+        print(f'{i:3}: {dv:3.0f} m/s, 10^{math.log10(dt):4.2f} s')
+    print(f'cumulative ({len(caught) - 1}): {v:3.0f} m/s, {t:.0f} s (10^{math.log10(t):4.2f} s, {t/60/60/24/365:5.2f} years)')
