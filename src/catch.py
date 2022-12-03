@@ -3,7 +3,12 @@ import lib
 import math
 import constants
 
-def resources_to_transfer(object_1: dict, object_2: dict, time_offset: float = 0, extra_budget: float = 0) -> tuple[float, float]:
+def resources_to_transfer(
+        object_1: dict,
+        object_2: dict,
+        time_offset: float = 0,
+        extra_budget: float = 0
+        ) -> tuple[float, float]:
     orbit_1 = lib.Orbit2d.from_dict(object_1)
     orbit_2 = lib.Orbit2d.from_dict(object_2)
     orbit_i = find_intermediate_orbit(orbit_1, orbit_2)
@@ -57,7 +62,12 @@ def resources_to_transfer(object_1: dict, object_2: dict, time_offset: float = 0
     return total_dv, total_time
 
 
-def match_RAAN(initial_orbit: lib.Orbit2d, inclination: float, target_precession_rate: float, RAAN_delta: float) -> float:
+def match_RAAN(
+        initial_orbit: lib.Orbit2d,
+        inclination: float,
+        target_precession_rate: float,
+        RAAN_delta: float
+        ) -> float:
     initial_precession_rate = lib.nodal_precession(inclination, initial_orbit)
     precession_rate_delta = target_precession_rate - initial_precession_rate
     if precession_rate_delta < 0:
@@ -96,7 +106,7 @@ def find_intermediate_orbit(orbit_1: lib.Orbit2d, orbit_2: lib.Orbit2d) -> lib.O
 def match_mean_anomaly(orbit: lib.Orbit2d, period: float, orbits_to_precess: float) -> float:
     precession = (period - orbit.period) / orbit.period
     precession_delta = precession * orbits_to_precess % 360
-    total_delta = 360 # worst case scenario #float(object_2['MEAN_ANOMALY']) - float(object_1['MEAN_ANOMALY'])
+    total_delta = 360 # worst case scenario
     final_delta = (total_delta + precession_delta) % 360
     if final_delta < 0:
         final_delta += 360 # normalize to 0-360
@@ -113,12 +123,21 @@ def get_objects():
     return objects
 
 
-def collect(objects: list[dict], start: int, per_catch_fuel_budget: float, per_catch_time_target: float, total_fuel_budget: float):
+def collect(
+        objects: list[dict],
+        start: int,
+        per_catch_fuel_budget: float,
+        per_catch_time_target: float,
+        total_fuel_budget: float
+        ) -> tuple[list[dict], float, float, list[tuple[float, float, int]]]:
     v = t = 0
     caught = [objects[start]]
     metadata = []
     while v < total_fuel_budget:
-        catch, dv, dt, index = collect_one(objects, caught, start, per_catch_fuel_budget, per_catch_time_target, t)
+        try:
+            catch, dv, dt, index = collect_one(objects, caught, start, per_catch_fuel_budget, per_catch_time_target, t)
+        except ValueError:
+            break
         v += dv
         t += dt
         caught.append(catch)
@@ -126,7 +145,13 @@ def collect(objects: list[dict], start: int, per_catch_fuel_budget: float, per_c
     return caught, v, t, metadata
 
 
-def collect_one(objects: list[dict], caught: list[dict], start: int, per_catch_fuel_budget: float, per_catch_time_target: float, current_time: float):
+def collect_one(
+        objects: list[dict],
+        caught: list[dict],
+        start: int,
+        per_catch_fuel_budget: float,
+        per_catch_time_target: float,
+        current_time: float):
     index = start
     while index < len(objects) - 1:
         index += 1
@@ -135,6 +160,7 @@ def collect_one(objects: list[dict], caught: list[dict], start: int, per_catch_f
         dv, dt = resources_to_transfer(caught[-1], objects[index], current_time, per_catch_fuel_budget)
         if dt < per_catch_time_target:
             return objects[index], dv, dt, index
+    raise ValueError('No object found')
 
 
 if __name__ == '__main__':
