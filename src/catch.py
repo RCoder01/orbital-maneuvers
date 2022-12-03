@@ -143,13 +143,18 @@ if __name__ == '__main__':
         list(obj for obj in objects if float(obj['ECCENTRICITY']) < 0.007 and 400 < float(obj['APOAPSIS']) < 600),
         key=lambda obj: (float(obj['INCLINATION']), float(obj['RA_OF_ASC_NODE'])))
 
+    import sys
+
     PER_CATCH_FUEL_BUDGET = 300 # m/s
     PER_CATCH_TIME_BUDGET = 10**7.25 # s
     TOTAL_FUEL_BUDGET = 5000 # m/s
-    START = 370
+    START = int(sys.argv[1])
 
     caught, v, t, meta = collect(s_objects, START, PER_CATCH_FUEL_BUDGET, PER_CATCH_TIME_BUDGET, TOTAL_FUEL_BUDGET)
 
     for dv, dt, i in meta:
         print(f'{i:3}: {dv:3.0f} m/s, 10^{math.log10(dt):4.2f} s')
     print(f'cumulative ({len(caught) - 1}): {v:3.0f} m/s, {t:.0f} s (10^{math.log10(t):4.2f} s, {t/60/60/24/365:5.2f} years)')
+
+    for _, _, i in [(0, 0, START)] + meta:
+        print(f'{i}: {s_objects[i]["OBJECT_ID"]:13} {s_objects[i]["OBJECT_NAME"]}')
