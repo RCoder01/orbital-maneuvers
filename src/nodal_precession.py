@@ -1,3 +1,4 @@
+import math
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -17,7 +18,7 @@ def main():
     omegas = np.zeros((len(inclinations), len(altitudes)))
     for x, inc in enumerate(inclinations):
         for y, alt in enumerate(altitudes):
-            omegas[x, y] = nodal_precession(inc, alt + constants.EARTH_MEAN_RADIUS)
+            omegas[x, y] = math.radians(nodal_precession(inc, alt + constants.EARTH_MEAN_RADIUS))
 
 
     alt_ticks = range(0, len(altitudes) + 1, alt_delta // 1000)

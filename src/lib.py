@@ -7,6 +7,8 @@ def gravitational_parameter(mass_1: float = constants.EARTH_MASS, mass_2: float 
     return constants.GRAVITATIONAL_CONSTANT * (mass_1 + mass_2) # m^3 s^-2
 
 class Orbit2d:
+    __slots__ = 'semimajor_axis', 'eccentricity', 'gravitational_parameter'
+
     def __init__(self, semimajor_axis: float, eccentricity: float = 0, gravitational_parameter: float = gravitational_parameter()):
         self.semimajor_axis = semimajor_axis # m
         self.eccentricity = eccentricity # unitless
@@ -124,13 +126,13 @@ def nodal_precession(
         *,
         equitorial_radius: int = constants.EARTH_EQUITORIAL_RADIUS, # m
         j2: float = constants.EARTH_J2, # unitless
-        ) -> float: # rad/s
+        ) -> float: # deg/s
     """
     Returns the approximate nodal precession rate of a satellite
 
     https://en.wikipedia.org/wiki/Nodal_precession#Rate_of_precession
     """
-    return ((-3 * equitorial_radius**2 * j2 * orbit.angular_velocity * math.cos(math.radians(inclination)))
+    return math.degrees((-3 * equitorial_radius**2 * j2 * orbit.angular_velocity * math.cos(math.radians(inclination)))
      / (2 * (orbit.semimajor_axis * (1 - orbit.eccentricity**2))**2))
 
 
