@@ -105,6 +105,7 @@ def find_intermediate_orbit(orbit_1: lib.Orbit2d, orbit_2: lib.Orbit2d) -> lib.O
 
 def match_mean_anomaly(orbit: lib.Orbit2d, period: float, orbits_to_precess: float) -> float:
     precession = (period - orbit.period) / orbit.period
+    return math.fabs(1 / precession)
     precession_delta = precession * orbits_to_precess % 360
     total_delta = 360 # worst case scenario
     final_delta = (total_delta + precession_delta) % 360
