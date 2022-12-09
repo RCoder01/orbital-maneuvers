@@ -190,7 +190,10 @@ def collect_one(
         index += 1
         if objects[index] in caught:
             continue
-        dv, dt, debug_info = resources_to_transfer(caught[-1], objects[index], current_time, per_catch_fuel_budget)
+        try:
+            dv, dt, debug_info = resources_to_transfer(caught[-1], objects[index], current_time, per_catch_fuel_budget)
+        except ZeroDivisionError:
+            continue
         if dt < per_catch_time_target:
             return objects[index], dv, dt, index, debug_info
     raise ValueError('No object found')
