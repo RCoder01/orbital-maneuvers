@@ -9,3 +9,5 @@
   - Run `get.py` with credentials to save current debris data
   - `catch.py` is the primary calculation script.
     Ensure your current directory is `src` when running.
+  - Constants at the bottom of `catch.py` can be modified
+  - Other files are used to generate graphs

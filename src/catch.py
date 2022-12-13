@@ -23,12 +23,12 @@ def resources_to_transfer(
     if debug_log is None:
         debug_log = Writer()
 
+    # set up orbits
     orbit_1 = lib.Orbit2d.from_dict(object_1)
     orbit_2 = lib.Orbit2d.from_dict(object_2)
     orbit_i = find_intermediate_orbit(orbit_1, orbit_2)
     orbit_j = find_extra_budget_orbit(extra_budget, orbit_1, orbit_2)
     print(f'Changing from {orbit_1.semimajor_axis/1000:.0f} km to {orbit_2.semimajor_axis/1000:.0f} km', file=debug_log)
-
 
     inc_1 = float(object_1['INCLINATION'])
     inc_2 = float(object_2['INCLINATION'])
@@ -36,6 +36,7 @@ def resources_to_transfer(
     nodal_precession_1 = lib.nodal_precession(inc_1, orbit_1)
     nodal_precession_2 = lib.nodal_precession(inc_2, orbit_2)
 
+    # Calculate time to match RAAN
     RAAN_1 = (float(object_1['RA_OF_ASC_NODE']) + nodal_precession_1 * time_offset) % 360
     RAAN_2 = (float(object_2['RA_OF_ASC_NODE']) + nodal_precession_2 * time_offset) % 360
     RAAN_delta = RAAN_1 - RAAN_2
@@ -53,6 +54,7 @@ def resources_to_transfer(
         (j_precession_time, orbit_j.period),
         key=lambda x: x[0])
 
+    # == comaprison is ok because min returns the same object
     if period == orbit_1.period:
         print(f'match RAAN at 1, {min_time_to_precess:.0f} s', file=debug_log)
     if period == orbit_i.period:
@@ -65,6 +67,7 @@ def resources_to_transfer(
     j_used = min_time_to_precess is j_precession_time
     j_change_dv_total = extra_budget if j_used else 0
 
+    # Calculate cheapest place to match inclination
     inc_delta = abs(inc_1 - inc_2)
     necessary_inc_change_dv = partial(lib.inclination_change_dv, inclination_delta=inc_delta)
     inc_change_opportunities = [
@@ -78,9 +81,11 @@ def resources_to_transfer(
     print(f'inc change from {inc_1} to {inc_2} (delta {inc_delta}) requires {inc_change_dv} m/s', file=debug_log)
     print(f'change inc at {["1", "2", "i", "j"][inc_change_opportunities.index(inc_change_dv)]}', file=debug_log)
 
+    # Calculate time to match mean anomaly
     orbits_to_match_mean_anomaly = match_mean_anomaly(orbit_2, period, orbits_to_precess)
     print(f'time to match mean anomaly: {orbits_to_match_mean_anomaly * period} s', file=debug_log)
 
+    # Calculate hohmann delta v
     orbit_1_to_i = lib.coaxial_elliptic_orbit_change_dv(orbit_1, orbit_i)
     orbit_i_to_2 = lib.coaxial_elliptic_orbit_change_dv(orbit_i, orbit_2)
     print(f'orbit_1: {orbit_1.semimajor_axis/1000:.0f} km', file=debug_log)
@@ -88,6 +93,7 @@ def resources_to_transfer(
         print(f'orbit_j: {orbit_j.semimajor_axis/1000:.0f} km (1 to j to 1: {extra_budget:.2f} m/s)', file=debug_log)
     print(f'orbit_i: {orbit_i.semimajor_axis/1000:.0f} km (1 to i: {orbit_1_to_i:.2f} m/s)', file=debug_log)
     print(f'orbit_2: {orbit_2.semimajor_axis/1000:.0f} km (i to 2: {orbit_i_to_2:.2f} m/s)', file=debug_log)
+
 
     total_dv = orbit_1_to_i + orbit_i_to_2 + inc_change_dv + j_change_dv_total
     total_time = orbits_to_precess * period + orbits_to_match_mean_anomaly * orbit_2.period
@@ -100,6 +106,9 @@ def match_RAAN(
         target_precession_rate: float,
         RAAN_delta: float
         ) -> float:
+    """
+    Calcualtes orbits needed to precess from one RAAN to another.
+    """
     initial_precession_rate = lib.nodal_precession(inclination, initial_orbit)
     precession_rate_delta = target_precession_rate - initial_precession_rate
     if precession_rate_delta < 0:
@@ -119,13 +128,14 @@ def find_extra_budget_orbit(extra_budget: float, orbit_1: lib.Orbit2d, orbit_2: 
 
 
 def find_intermediate_orbit(orbit_1: lib.Orbit2d, orbit_2: lib.Orbit2d) -> lib.Orbit2d:
-    '''
+    """
     Intermediate orbit needed for arg of periapsis change
 
-    Simpler to just use a circular intermediate orbit than periapse change because most orbits are roughly circular
+    Simpler to just use a circular intermediate orbit than periapse change
+    because most orbits are roughly circular
 
     Not perfect, but good enough
-    '''
+    """
     if orbit_1.apoapsis <= orbit_2.periapsis:
         radius = orbit_2.periapsis
     elif orbit_1.apoapsis >= orbit_2.apoapsis:
@@ -136,19 +146,18 @@ def find_intermediate_orbit(orbit_1: lib.Orbit2d, orbit_2: lib.Orbit2d) -> lib.O
 
 
 def match_mean_anomaly(orbit: lib.Orbit2d, period: float, orbits_to_precess: float) -> float:
+    """
+    Calculates number of orbits to match mean anomaly,
+    assuming both orbits are 360 degrees separated
+    """
     precession = (period - orbit.period) / orbit.period
     return math.fabs(1 / precession)
-    precession_delta = precession * orbits_to_precess % 360
-    total_delta = 360 # worst case scenario
-    final_delta = (total_delta + precession_delta) % 360
-    if final_delta < 0:
-        final_delta += 360 # normalize to 0-360
-    if precession < 0:
-        final_delta -= 360 # ensure precession has the same sign as delta
-    return final_delta / precession
 
 
 def get_objects():
+    """
+    Returns a list of objects from leo_debris.json
+    """
     import json
 
     try:
@@ -166,6 +175,9 @@ def collect(
         per_catch_time_target: float,
         total_fuel_budget: float
         ) -> tuple[list[dict], float, float, list[tuple[float, float, int]]]:
+    """
+    Collects objects continuously until fuel budget is exhausted
+    """
     v = t = 0
     caught = [objects[start]]
     metadata = []
@@ -188,6 +200,11 @@ def collect_one(
         per_catch_fuel_budget: float,
         per_catch_time_target: float,
         current_time: float):
+    """
+    Collects one object
+
+    Makes sure dt is within target time
+    """
     index = start
     while index < len(objects) - 1:
         index += 1
@@ -203,6 +220,9 @@ def collect_one(
 
 
 def deorbit_dv(orbit: lib.Orbit2d) -> float:
+    """
+    Calculates delta-v needed to deorbit an object to the ground
+    """
     return lib.coaxial_elliptic_orbit_change_dv(
         orbit,
         lib.Orbit2d.from_apsides(orbit.apoapsis, constants.EARTH_MEAN_RADIUS))
@@ -210,15 +230,18 @@ def deorbit_dv(orbit: lib.Orbit2d) -> float:
 
 if __name__ == '__main__':
     objects = get_objects()
+    # filter out eccentric orbits otherwise cost to circularize is high
     s_objects = sorted(
         list(obj for obj in objects if float(obj['ECCENTRICITY']) < 0.007 and 400 < float(obj['APOAPSIS']) < 600),
         key=lambda obj: (float(obj['INCLINATION']), float(obj['RA_OF_ASC_NODE'])))
 
     import sys
 
+    ### CHANGE THESE ###
     PER_CATCH_FUEL_BUDGET = 100 # m/s
     PER_CATCH_TIME_BUDGET = 10**7.7 # s
     TOTAL_FUEL_BUDGET = 1100 # m/s
+    ####################
     try:
         START = int(sys.argv[1])
     except IndexError:
