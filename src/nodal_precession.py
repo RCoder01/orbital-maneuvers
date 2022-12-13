@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
 
-from lib import nodal_precession
+from lib import nodal_precession, Orbit2d
 import constants
 
 
@@ -18,7 +18,7 @@ def main():
     omegas = np.zeros((len(inclinations), len(altitudes)))
     for x, inc in enumerate(inclinations):
         for y, alt in enumerate(altitudes):
-            omegas[x, y] = math.radians(nodal_precession(inc, alt + constants.EARTH_MEAN_RADIUS))
+            omegas[x, y] = math.radians(nodal_precession(inc, Orbit2d(alt + constants.EARTH_MEAN_RADIUS)))
 
 
     alt_ticks = range(0, len(altitudes) + 1, alt_delta // 1000)
@@ -57,7 +57,7 @@ def main():
         clines.add_label_near(x, y, inline=True, transform=False)
 
     plt.gcf().set_size_inches(6, 6)
-    plt.savefig('graphs/nodal_precession.png', bbox_inches='tight')
+    plt.savefig('graphs/nodal_precession.png', bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':
