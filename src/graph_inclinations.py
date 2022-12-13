@@ -24,7 +24,7 @@ if __name__ == '__main__':
             incs = create_incs(sys.argv[1])
         except FileNotFoundError:
             print(f'File with name {sys.argv[1]} not found')
-            quit()
+            exit(1)
     else:
         try:
             with open('../data/incs.txt', mode='r', encoding='UTF-8') as f:
@@ -33,6 +33,6 @@ if __name__ == '__main__':
             print('File with name ../data/incs.txt not found, '
             'try running this script with a debris file name as an argument\n'
             'Debris files can be created with get.py')
-            quit()
+            exit(1)
         incs = list(map(lambda s: float(s.strip()), incs))
     graph(incs)

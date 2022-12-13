@@ -151,8 +151,11 @@ def match_mean_anomaly(orbit: lib.Orbit2d, period: float, orbits_to_precess: flo
 def get_objects():
     import json
 
-    with open('../data/leo_debris.json', mode='r', encoding='UTF-8') as f:
-        objects = json.load(f)
+    try:
+        with open('../data/leo_debris.json', mode='r', encoding='UTF-8') as f:
+            objects = json.load(f)
+    except FileNotFoundError:
+        print('leo_debris.json not found, ensure you have run get.py')
     return objects
 
 
@@ -216,18 +219,20 @@ if __name__ == '__main__':
     PER_CATCH_FUEL_BUDGET = 100 # m/s
     PER_CATCH_TIME_BUDGET = 10**7.7 # s
     TOTAL_FUEL_BUDGET = 1100 # m/s
-    START = int(sys.argv[1])
+    try:
+        START = int(sys.argv[1])
+    except IndexError:
+        print('No start index given')
+        print('Please enter a number between 0 and', len(s_objects) - 1)
+        print('Example: py -3.11', sys.argv[0], '0')
+        exit(1)
 
     caught, v, t, meta = collect(s_objects, START, PER_CATCH_FUEL_BUDGET, PER_CATCH_TIME_BUDGET, TOTAL_FUEL_BUDGET)
 
     for dv, dt, i, debug_info in meta:
         print(f'{i:3}: {dv:3.0f} m/s, 10^{math.log10(dt):4.2f} s')
-        # print(debug_info.string)
     print(f'cumulative ({len(caught) - 1}): {v:3.0f} m/s, {t:.0f} s (10^{math.log10(t):4.2f} s, {t/60/60/24/365:5.2f} years)')
 
     dv_to_deorbit = deorbit_dv(lib.Orbit2d.from_dict(caught[-1]))
     print(f'deorbit dv: {dv_to_deorbit:.2f} m/s')
     print(f'total dv: {v + dv_to_deorbit:.2f} m/s')
-
-    # for _, _, i, _ in [(0, 0, START, 0)] + meta:
-    #     print(f'{i}: {s_objects[i]["OBJECT_ID"]:13} {s_objects[i]["OBJECT_NAME"]}')
