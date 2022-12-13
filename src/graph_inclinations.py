@@ -15,26 +15,24 @@ def create_incs(input_filename: str):
     with open(input_filename, mode='r', encoding='UTF-8') as f:
         objects = json.load(f)
     incs = list(map(lambda o: o['INCLINATION'], objects))
-    with open('../data/incs.txt', mode='w', encoding='UTF-8') as f:
-        for inc in incs:
-            f.write(f'{inc}\n')
+    return incs
 
 if __name__ == '__main__':
     import sys
     if len(sys.argv) > 1:
         try:
-            create_incs(sys.argv[1])
+            incs = create_incs(sys.argv[1])
         except FileNotFoundError:
             print(f'File with name {sys.argv[1]} not found')
             quit()
-
-    try:
-        with open('../data/incs.txt', mode='r', encoding='UTF-8') as f:
-            global incs
-            incs = f.readlines()
-    except FileNotFoundError:
-        print('File with name ../data/incs.txt not found, '
-        'try running this script with a debris file name as an argument')
-        quit()
-    incs = list(map(lambda s: float(s.strip()), incs))
+    else:
+        try:
+            with open('../data/incs.txt', mode='r', encoding='UTF-8') as f:
+                incs = f.readlines()
+        except FileNotFoundError:
+            print('File with name ../data/incs.txt not found, '
+            'try running this script with a debris file name as an argument\n'
+            'Debris files can be created with get.py')
+            quit()
+        incs = list(map(lambda s: float(s.strip()), incs))
     graph(incs)
