@@ -81,8 +81,8 @@ def resources_to_transfer(
     orbits_to_match_mean_anomaly = match_mean_anomaly(orbit_2, period, orbits_to_precess)
     print(f'time to match mean anomaly: {orbits_to_match_mean_anomaly * period} s', file=debug_log)
 
-    orbit_1_to_i = lib.tangential_orbit_change_dv(orbit_1, orbit_i)
-    orbit_i_to_2 = lib.tangential_orbit_change_dv(orbit_i, orbit_2)
+    orbit_1_to_i = lib.coaxial_elliptic_orbit_change_dv(orbit_1, orbit_i)
+    orbit_i_to_2 = lib.coaxial_elliptic_orbit_change_dv(orbit_i, orbit_2)
     print(f'orbit_1: {orbit_1.semimajor_axis/1000:.0f} km', file=debug_log)
     if j_used:
         print(f'orbit_j: {orbit_j.semimajor_axis/1000:.0f} km (1 to j to 1: {extra_budget:.2f} m/s)', file=debug_log)
@@ -200,7 +200,7 @@ def collect_one(
 
 
 def deorbit_dv(orbit: lib.Orbit2d) -> float:
-    return lib.tangential_orbit_change_dv(
+    return lib.coaxial_elliptic_orbit_change_dv(
         orbit,
         lib.Orbit2d.from_apsides(orbit.apoapsis, constants.EARTH_MEAN_RADIUS + 200_000))
 

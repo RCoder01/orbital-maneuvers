@@ -140,7 +140,7 @@ def inclination_change_dv(orbit: Orbit2d, inclination_delta: float) -> float:
     return 2 * orbit.apoapsis_velocity * math.sin(math.radians(inclination_delta / 2))
 
 
-def tangential_orbit_change_dv(initial: Orbit2d, final: Orbit2d) -> float:
+def coaxial_elliptic_orbit_change_dv(initial: Orbit2d, final: Orbit2d) -> float:
     if abs(initial.periapsis - final.periapsis) <= 1e-6:
         return abs(initial.periapsis_velocity - final.periapsis_velocity)
     if abs(initial.periapsis - final.apoapsis) <= 1e-6:
@@ -154,8 +154,8 @@ def tangential_orbit_change_dv(initial: Orbit2d, final: Orbit2d) -> float:
     intermediate_b = Orbit2d.from_apsides(final.periapsis, initial.apoapsis)
 
     return min(
-        tangential_orbit_change_dv(initial, intermediate_a) + tangential_orbit_change_dv(intermediate_a, final),
-        tangential_orbit_change_dv(initial, intermediate_b) + tangential_orbit_change_dv(intermediate_b, final))
+        coaxial_elliptic_orbit_change_dv(initial, intermediate_a) + coaxial_elliptic_orbit_change_dv(intermediate_a, final),
+        coaxial_elliptic_orbit_change_dv(initial, intermediate_b) + coaxial_elliptic_orbit_change_dv(intermediate_b, final))
 
 
 def arg_of_periapsis_change_dv(orbit: Orbit2d, arg_of_periapsis_delta: float) -> float:
