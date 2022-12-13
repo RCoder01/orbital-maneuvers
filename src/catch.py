@@ -202,7 +202,7 @@ def collect_one(
 def deorbit_dv(orbit: lib.Orbit2d) -> float:
     return lib.coaxial_elliptic_orbit_change_dv(
         orbit,
-        lib.Orbit2d.from_apsides(orbit.apoapsis, constants.EARTH_MEAN_RADIUS + 200_000))
+        lib.Orbit2d.from_apsides(orbit.apoapsis, constants.EARTH_MEAN_RADIUS))
 
 
 if __name__ == '__main__':
