@@ -7,7 +7,7 @@ def graph(incs: list[float]):
     plt.ylabel('Number of Cataloged Objects')
     plt.yscale('log')
     plt.gcf().set_size_inches(6, 3)
-    plt.savefig(r'graphs\leo_inclinations.png', bbox_inches='tight', dpi=300)
+    plt.savefig('graphs/leo_inclinations.png', bbox_inches='tight', dpi=300)
     plt.clf()
 
 def create_incs(input_filename: str):
