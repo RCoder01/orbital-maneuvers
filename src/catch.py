@@ -1,15 +1,8 @@
 from functools import partial
+from io import StringIO
 import lib
 import math
 import constants
-
-
-class Writer:
-    def __init__(self):
-        self.string = ''
-    
-    def write(self, s):
-        self.string += s
 
 
 
@@ -21,7 +14,7 @@ def resources_to_transfer(
         debug_log = None
         ) -> tuple[float, float]:
     if debug_log is None:
-        debug_log = Writer()
+        debug_log = StringIO()
 
     # set up orbits
     orbit_1 = lib.Orbit2d.from_dict(object_1)
