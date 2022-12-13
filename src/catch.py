@@ -222,10 +222,12 @@ if __name__ == '__main__':
 
     for dv, dt, i, debug_info in meta:
         print(f'{i:3}: {dv:3.0f} m/s, 10^{math.log10(dt):4.2f} s')
-        print(debug_info.string)
+        # print(debug_info.string)
     print(f'cumulative ({len(caught) - 1}): {v:3.0f} m/s, {t:.0f} s (10^{math.log10(t):4.2f} s, {t/60/60/24/365:5.2f} years)')
 
-    print(f'deorbit dv: {deorbit_dv(lib.Orbit2d.from_dict(caught[-1])):.2f} m/s')
+    dv_to_deorbit = deorbit_dv(lib.Orbit2d.from_dict(caught[-1]))
+    print(f'deorbit dv: {dv_to_deorbit:.2f} m/s')
+    print(f'total dv: {v + dv_to_deorbit:.2f} m/s')
 
     # for _, _, i, _ in [(0, 0, START, 0)] + meta:
     #     print(f'{i}: {s_objects[i]["OBJECT_ID"]:13} {s_objects[i]["OBJECT_NAME"]}')
