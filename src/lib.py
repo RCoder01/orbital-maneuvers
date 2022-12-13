@@ -137,7 +137,7 @@ def nodal_precession(
 
 
 def inclination_change_dv(orbit: Orbit2d, inclination_delta: float) -> float:
-    return 2 * orbit.apoapsis_velocity * math.sin(math.radians(inclination_delta / 2))
+    return 2 * orbit.periapsis_velocity * math.sin(math.radians(inclination_delta / 2))
 
 
 def coaxial_elliptic_orbit_change_dv(initial: Orbit2d, final: Orbit2d) -> float:
