@@ -15,7 +15,7 @@ class Orbit2d:
         self.gravitational_parameter = gravitational_parameter # m^3 s^-2
 
     def __repr__(self):
-        return f"Ellipse(semimajor_axis={self.semimajor_axis}, eccentricity={self.eccentricity})"
+        return f"Orbit2d(semimajor_axis={self.semimajor_axis}, eccentricity={self.eccentricity})"
 
     @classmethod
     def from_dict(cls, orbit: dict, **kwargs) -> Self:
